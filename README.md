@@ -55,10 +55,13 @@ This script automates the configuration of Cursor IDE on Ubuntu, resolving commo
 
 ## ⚙️ What gets configured
 
-### 1. Terminal alias
-The script adds an alias to your shell configuration file:
+### 1. Terminal function
+The script adds a shell function to your shell configuration file:
 ```bash
-alias cursor='nohup ~/Applications/cursor.AppImage --no-sandbox > /dev/null 2>&1 &'
+# Function to run Cursor in background with arguments support
+cursor() {
+    nohup ~/Applications/cursor.AppImage --no-sandbox "$@" > /dev/null 2>&1 &
+}
 ```
 
 ### 2. .desktop file
@@ -108,13 +111,16 @@ The SUID sandbox helper binary was found, but is not configured correctly
 update-desktop-database ~/.local/share/applications/
 ```
 
-### Alias doesn't work
+### Function doesn't work
 ```bash
 # Check if it was added
-grep cursor ~/.zshrc  # or ~/.bashrc
+grep -A 3 'cursor()' ~/.zshrc  # or ~/.bashrc
 
 # Apply settings
 source ~/.zshrc
+
+# Test the function
+type cursor
 ```
 
 ## 🗑️ Uninstallation
@@ -122,8 +128,9 @@ source ~/.zshrc
 To revert the configuration:
 
 ```bash
-# Remove alias
-sed -i '/alias cursor=/d' ~/.zshrc
+# Remove function
+sed -i '/cursor() {/,/}/d' ~/.zshrc
+sed -i '/# Function to run Cursor/d' ~/.zshrc
 sed -i '/## CURSOR/d' ~/.zshrc
 
 # Remove system files

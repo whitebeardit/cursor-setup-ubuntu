@@ -99,47 +99,51 @@ find_cursor_appimage() {
     echo "$cursor_path"
 }
 
-# Função para configurar o alias baseado no shell
+# Função para configurar a função cursor baseado no shell
 setup_shell_alias() {
     local cursor_path="$1"
     local shell_type="$2"
     local config_file=""
-    local alias_command="alias cursor='nohup $cursor_path --no-sandbox > /dev/null 2>&1 &'"
+    local function_code=""
     
     case "$shell_type" in
         bash)
             config_file="$HOME/.bashrc"
+            function_code="# Function to run Cursor in background with arguments support\ncursor() {\n    nohup $cursor_path --no-sandbox \"\$@\" > /dev/null 2>&1 &\n}"
             ;;
         zsh)
             config_file="$HOME/.zshrc"
+            function_code="# Function to run Cursor in background with arguments support\ncursor() {\n    nohup $cursor_path --no-sandbox \"\$@\" > /dev/null 2>&1 &\n}"
             ;;
         fish)
             # Fish usa uma sintaxe diferente
             config_file="$HOME/.config/fish/config.fish"
-            alias_command="function cursor; nohup $cursor_path --no-sandbox > /dev/null 2>&1 &; end"
+            function_code="# Function to run Cursor in background with arguments support\nfunction cursor\n    nohup $cursor_path --no-sandbox \$argv > /dev/null 2>&1 &\nend"
             ;;
         *)
             config_file="$HOME/.bashrc"
+            function_code="# Function to run Cursor in background with arguments support\ncursor() {\n    nohup $cursor_path --no-sandbox \"\$@\" > /dev/null 2>&1 &\n}"
             ;;
     esac
     
-    print_info "Configurando alias no $config_file..."
+    print_info "Configurando função cursor no $config_file..."
     
-    # Verificar se o alias já existe
-    if grep -q "alias cursor=" "$config_file" 2>/dev/null || grep -q "function cursor" "$config_file" 2>/dev/null; then
+    # Verificar se o cursor já existe como função ou alias
+    if grep -q "alias cursor=" "$config_file" 2>/dev/null || grep -q "function cursor" "$config_file" 2>/dev/null || grep -q "cursor()" "$config_file" 2>/dev/null; then
         print_warning "Alias/função 'cursor' já existe. Removendo versão anterior..."
         # Remover linhas existentes do cursor
         sed -i '/alias cursor=/d' "$config_file" 2>/dev/null || true
         sed -i '/function cursor/d' "$config_file" 2>/dev/null || true
+        sed -i '/cursor() {/,/}/d' "$config_file" 2>/dev/null || true
         sed -i '/## CURSOR/d' "$config_file" 2>/dev/null || true
     fi
     
-    # Adicionar novo alias
+    # Adicionar nova função
     echo "" >> "$config_file"
     echo "## CURSOR" >> "$config_file"
-    echo "$alias_command" >> "$config_file"
+    echo -e "$function_code" >> "$config_file"
     
-    print_success "Alias configurado em $config_file"
+    print_success "Função cursor configurada em $config_file"
 }
 
 # Função para extrair ícone do AppImage

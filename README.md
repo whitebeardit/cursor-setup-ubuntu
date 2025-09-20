@@ -19,15 +19,30 @@ This script automates the configuration of Cursor IDE on Ubuntu, resolving commo
 
 ## 🛠️ How to use
 
-### Option 1: Auto-detection
+### Initial Setup
+
+#### Option 1: Auto-detection
 ```bash
 ./setup-cursor-ubuntu.sh
 ```
 
-### Option 2: Specify path
+#### Option 2: Specify path
 ```bash
 ./setup-cursor-ubuntu.sh /path/to/cursor.AppImage
 ```
+
+### Fix Freeze Issues
+
+If Cursor becomes unresponsive or freezes:
+```bash
+./cursor-fix-freeze.sh
+```
+
+This script provides:
+- Quick fixes for common freeze causes
+- System optimization for better performance
+- Cache cleaning and memory management
+- GPU acceleration troubleshooting
 
 ## 📥 Quick installation
 
@@ -122,6 +137,26 @@ source ~/.zshrc
 # Test the function
 type cursor
 ```
+
+### Cursor freezes or "not responding"
+```bash
+# Quick fix - increase file watchers and clean cache
+sudo sysctl fs.inotify.max_user_watches=524288
+pkill -f cursor
+rm -rf ~/.config/Cursor/CachedData ~/.config/Cursor/logs
+
+# Or run the comprehensive fix script
+./cursor-fix-freeze.sh
+```
+
+**Common causes:**
+- Low file watcher limits (large projects)
+- GPU acceleration conflicts  
+- Wayland compatibility issues
+- Insufficient memory/swap
+- Corrupted cache files
+
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed solutions.
 
 ## 🗑️ Uninstallation
 

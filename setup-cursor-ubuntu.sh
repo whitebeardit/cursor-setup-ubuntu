@@ -99,6 +99,33 @@ find_cursor_appimage() {
     echo "$cursor_path"
 }
 
+# Detectar GPU e configurar flags otimizadas
+detect_gpu_and_get_flags() {
+    local gpu_flags=""
+    
+    # Verificar NVIDIA
+    if command -v nvidia-smi > /dev/null 2>&1; then
+        print_info "🔵 NVIDIA GPU detected - enabling advanced acceleration"
+        gpu_flags="--enable-gpu --enable-gpu-rasterization --enable-zero-copy --enable-native-gpu-memory-buffers"
+        
+    # Verificar AMD
+    elif lspci | grep -i amd | grep -i vga > /dev/null; then
+        print_info "🔴 AMD GPU detected - enabling GPU acceleration"
+        gpu_flags="--enable-gpu --enable-gpu-rasterization --enable-zero-copy"
+        
+    # Verificar Intel
+    elif lspci | grep -i intel | grep -i graphics > /dev/null; then
+        print_info "🟡 Intel integrated graphics detected - enabling basic acceleration"
+        gpu_flags="--enable-gpu --enable-gpu-rasterization"
+        
+    else
+        print_warning "No dedicated GPU detected - using CPU rendering"
+        gpu_flags="--disable-gpu"
+    fi
+    
+    echo "$gpu_flags"
+}
+
 # Função para configurar a função cursor baseado no shell
 setup_shell_alias() {
     local cursor_path="$1"
@@ -106,23 +133,27 @@ setup_shell_alias() {
     local config_file=""
     local function_code=""
     
+    # Detectar GPU e obter flags otimizadas
+    local gpu_flags=$(detect_gpu_and_get_flags)
+    print_info "GPU optimization flags: $gpu_flags"
+    
     case "$shell_type" in
         bash)
             config_file="$HOME/.bashrc"
-            function_code="# Function to run Cursor in background with arguments support\ncursor() {\n    nohup $cursor_path --no-sandbox \"\$@\" > /dev/null 2>&1 &\n}"
+            function_code="# Function to run Cursor in background with GPU optimization\ncursor() {\n    nohup $cursor_path --no-sandbox $gpu_flags \"\$@\" > /dev/null 2>&1 &\n}"
             ;;
         zsh)
             config_file="$HOME/.zshrc"
-            function_code="# Function to run Cursor in background with arguments support\ncursor() {\n    nohup $cursor_path --no-sandbox \"\$@\" > /dev/null 2>&1 &\n}"
+            function_code="# Function to run Cursor in background with GPU optimization\ncursor() {\n    nohup $cursor_path --no-sandbox $gpu_flags \"\$@\" > /dev/null 2>&1 &\n}"
             ;;
         fish)
             # Fish usa uma sintaxe diferente
             config_file="$HOME/.config/fish/config.fish"
-            function_code="# Function to run Cursor in background with arguments support\nfunction cursor\n    nohup $cursor_path --no-sandbox \$argv > /dev/null 2>&1 &\nend"
+            function_code="# Function to run Cursor in background with GPU optimization\nfunction cursor\n    nohup $cursor_path --no-sandbox $gpu_flags \$argv > /dev/null 2>&1 &\nend"
             ;;
         *)
             config_file="$HOME/.bashrc"
-            function_code="# Function to run Cursor in background with arguments support\ncursor() {\n    nohup $cursor_path --no-sandbox \"\$@\" > /dev/null 2>&1 &\n}"
+            function_code="# Function to run Cursor in background with GPU optimization\ncursor() {\n    nohup $cursor_path --no-sandbox $gpu_flags \"\$@\" > /dev/null 2>&1 &\n}"
             ;;
     esac
     
@@ -201,6 +232,9 @@ create_desktop_file() {
     
     print_info "Criando arquivo .desktop..."
     
+    # Detectar GPU e obter flags otimizadas
+    local gpu_flags=$(detect_gpu_and_get_flags)
+    
     # Criar diretório se não existir
     mkdir -p "$(dirname "$desktop_file")"
     
@@ -210,7 +244,7 @@ create_desktop_file() {
 Name=Cursor
 Comment=Code editor with AI capabilities
 GenericName=Text Editor
-Exec=env LANG=C nohup "$cursor_path" --no-sandbox %F
+Exec=env LANG=C nohup "$cursor_path" --no-sandbox $gpu_flags %F
 Icon=$icon_path
 Type=Application
 StartupNotify=true
@@ -222,7 +256,7 @@ Keywords=vscode;cursor;editor;
 
 [Desktop Action new-empty-window]
 Name=New Empty Window
-Exec=env LANG=C nohup "$cursor_path" --no-sandbox --new-window %F
+Exec=env LANG=C nohup "$cursor_path" --no-sandbox $gpu_flags --new-window %F
 Icon=$icon_path
 EOF
     
@@ -267,12 +301,27 @@ test_configuration() {
         return 1
     fi
     
+    # Detectar GPU e obter flags para teste
+    local gpu_flags=$(detect_gpu_and_get_flags)
+    print_info "Testando com flags de GPU: $gpu_flags"
+    
     # Testar se o comando básico funciona (com timeout)
     print_info "Testando execução do Cursor (com timeout de 10s)..."
-    if timeout 10s "$cursor_path" --no-sandbox --version > /dev/null 2>&1; then
-        print_success "Cursor executa corretamente com --no-sandbox"
+    if timeout 10s "$cursor_path" --no-sandbox $gpu_flags --version > /dev/null 2>&1; then
+        print_success "Cursor executa corretamente com otimizações de GPU"
     else
         print_warning "Cursor pode ter problemas de execução, mas isso é comum com AppImages"
+    fi
+    
+    # Verificar se GPU está sendo detectada corretamente
+    if command -v nvidia-smi > /dev/null 2>&1; then
+        print_info "🔵 NVIDIA GPU detectada - aceleração avançada habilitada"
+    elif lspci | grep -i amd | grep -i vga > /dev/null; then
+        print_info "🔴 AMD GPU detectada - aceleração habilitada"
+    elif lspci | grep -i intel | grep -i graphics > /dev/null; then
+        print_info "🟡 Intel GPU detectada - aceleração básica habilitada"
+    else
+        print_warning "⚠️  Nenhuma GPU dedicada detectada - usando renderização por CPU"
     fi
     
     print_success "Configuração testada com sucesso!"
@@ -288,6 +337,24 @@ show_final_instructions() {
     echo "✅ Ícone extraído e configurado"
     echo "✅ Arquivo .desktop criado"
     echo "✅ Cache de aplicações atualizado"
+    echo "✅ Otimizações de GPU aplicadas automaticamente"
+    echo ""
+    
+    # Mostrar informações específicas da GPU detectada
+    local gpu_flags=$(detect_gpu_and_get_flags)
+    if command -v nvidia-smi > /dev/null 2>&1; then
+        echo "🔵 NVIDIA GPU detectada - aceleração avançada habilitada"
+        echo "   Monitoramento: watch -n 1 nvidia-smi"
+    elif lspci | grep -i amd | grep -i vga > /dev/null; then
+        echo "🔴 AMD GPU detectada - aceleração habilitada"
+        echo "   Monitoramento: radeontop"
+    elif lspci | grep -i intel | grep -i graphics > /dev/null; then
+        echo "🟡 Intel GPU detectada - aceleração básica habilitada"
+        echo "   Monitoramento: intel_gpu_top"
+    else
+        echo "⚠️  Nenhuma GPU dedicada detectada - usando renderização por CPU"
+    fi
+    
     echo ""
     print_info "Para usar as configurações:"
     echo ""
@@ -307,6 +374,8 @@ show_final_instructions() {
             echo "   source ~/.config/fish/config.fish"
             ;;
     esac
+    echo ""
+    print_info "Flags de GPU aplicadas: $gpu_flags"
     echo ""
     print_success "Instalação concluída! 🎉"
 }

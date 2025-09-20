@@ -187,6 +187,11 @@ export ELECTRON_NO_SANDBOX=1
 export ELECTRON_DISABLE_SECURITY_WARNINGS=true
 export ELECTRON_ENABLE_LOGGING=true
 
+# GPU acceleration environment variables
+export ELECTRON_ENABLE_GPU=1
+export ELECTRON_DISABLE_GPU_SANDBOX=1
+export ELECTRON_ENABLE_GPU_RASTERIZATION=1
+
 # Memory management
 export NODE_OPTIONS="--max-old-space-size=4096"
 
@@ -204,8 +209,8 @@ else
     EXTRA_FLAGS=""
 fi
 
-# GPU acceleration fixes (try with acceleration first, fallback to software)
-GPU_FLAGS="--disable-gpu-sandbox --ignore-gpu-blacklist"
+# GPU acceleration fixes (optimized for better GPU utilization)
+GPU_FLAGS="--disable-gpu-sandbox --ignore-gpu-blacklist --enable-gpu --enable-gpu-rasterization --enable-zero-copy --enable-native-gpu-memory-buffers --enable-gpu-memory-buffer-compositor-resources --enable-gpu-memory-buffer-video-frames"
 
 # Find Cursor executable
 CURSOR_PATH=""
@@ -237,6 +242,10 @@ exec "$CURSOR_PATH" \
     --disable-renderer-backgrounding \
     --disable-backgrounding-occluded-windows \
     --max_old_space_size=4096 \
+    --enable-features=VaapiVideoDecoder,VaapiVideoEncoder \
+    --enable-accelerated-video-decode \
+    --enable-accelerated-mjpeg-decode \
+    --enable-accelerated-video-encode \
     $GPU_FLAGS \
     $EXTRA_FLAGS \
     "$@"
@@ -317,20 +326,46 @@ EOF
     print_success "System limits configured"
 }
 
-# Diagnosticar problemas de GPU
-diagnose_gpu_issues() {
-    print_header "DIAGNOSING GPU ISSUES"
+# Detectar e configurar GPU automaticamente
+detect_and_configure_gpu() {
+    print_header "DETECTING AND CONFIGURING GPU"
     
-    # Verificar driver de GPU
+    local gpu_type=""
+    local gpu_optimized_flags=""
+    
+    # Verificar NVIDIA
     if command -v nvidia-smi > /dev/null 2>&1; then
-        print_info "NVIDIA GPU detected"
-        nvidia-smi --query-gpu=name,driver_version --format=csv,noheader
+        print_info "🔵 NVIDIA GPU detected"
+        local nvidia_info=$(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader)
+        print_info "GPU Info: $nvidia_info"
+        gpu_type="nvidia"
+        gpu_optimized_flags="--enable-gpu --enable-gpu-rasterization --enable-zero-copy --enable-native-gpu-memory-buffers"
+        
+        # Verificar se está funcionando
+        if nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits | grep -q "[0-9]"; then
+            print_success "NVIDIA GPU is active and functional"
+        else
+            print_warning "NVIDIA GPU detected but may not be in use"
+        fi
+        
+    # Verificar AMD
     elif lspci | grep -i amd | grep -i vga > /dev/null; then
-        print_info "AMD GPU detected"
+        print_info "🔴 AMD GPU detected"
         lspci | grep -i amd | grep -i vga
+        gpu_type="amd"
+        gpu_optimized_flags="--enable-gpu --enable-gpu-rasterization --enable-zero-copy"
+        
+    # Verificar Intel
     elif lspci | grep -i intel | grep -i graphics > /dev/null; then
-        print_info "Intel integrated graphics detected"
+        print_info "🟡 Intel integrated graphics detected"
         lspci | grep -i intel | grep -i graphics
+        gpu_type="intel"
+        gpu_optimized_flags="--enable-gpu --enable-gpu-rasterization"
+        
+    else
+        print_warning "No dedicated GPU detected, using CPU rendering"
+        gpu_type="cpu"
+        gpu_optimized_flags="--disable-gpu"
     fi
     
     # Testar aceleração de hardware
@@ -340,11 +375,30 @@ diagnose_gpu_issues() {
         
         if echo "$renderer" | grep -i "software\|llvmpipe" > /dev/null; then
             print_warning "Software rendering detected. Hardware acceleration may be disabled."
-            print_info "Consider installing proper GPU drivers or using --disable-gpu flag"
+            print_info "Consider installing proper GPU drivers"
+        else
+            print_success "Hardware acceleration appears to be working"
         fi
     else
         print_warning "glxinfo not available. Install mesa-utils to check GPU acceleration"
     fi
+    
+    # Verificar VA-API para Intel/AMD
+    if [[ "$gpu_type" == "intel" || "$gpu_type" == "amd" ]]; then
+        if command -v vainfo > /dev/null 2>&1; then
+            print_info "VA-API available for video acceleration"
+        else
+            print_warning "VA-API not available. Install: sudo apt install vainfo mesa-va-drivers"
+        fi
+    fi
+    
+    # Retornar configuração otimizada
+    echo "$gpu_optimized_flags"
+}
+
+# Diagnosticar problemas de GPU (função legada mantida para compatibilidade)
+diagnose_gpu_issues() {
+    detect_and_configure_gpu
 }
 
 # Criar script de monitoramento
@@ -403,14 +457,15 @@ show_menu() {
     print_header "CURSOR FREEZE FIX MENU"
     echo "1. Quick Fix (Recommended)"
     echo "2. Full System Optimization" 
-    echo "3. Clean Cache Only"
-    echo "4. Create Optimized Launcher"
-    echo "5. System Diagnostics"
-    echo "6. Create Monitor Script"
-    echo "7. Emergency Reset"
-    echo "8. Exit"
+    echo "3. GPU Optimization Only"
+    echo "4. Clean Cache Only"
+    echo "5. Create Optimized Launcher"
+    echo "6. System Diagnostics"
+    echo "7. Create Monitor Script"
+    echo "8. Emergency Reset"
+    echo "9. Exit"
     echo
-    read -p "Choose an option [1-8]: " choice
+    read -p "Choose an option [1-9]: " choice
 }
 
 # Quick fix
@@ -424,6 +479,17 @@ quick_fix() {
     print_success "Quick fixes applied! Please restart your terminal and try Cursor."
 }
 
+# GPU optimization only
+gpu_optimization() {
+    print_header "GPU OPTIMIZATION ONLY"
+    
+    detect_and_configure_gpu
+    create_optimized_launcher
+    
+    print_success "GPU optimization complete! Restart Cursor to apply changes."
+    print_info "Monitor GPU usage with: watch -n 1 nvidia-smi"
+}
+
 # Full optimization
 full_optimization() {
     print_header "FULL SYSTEM OPTIMIZATION"
@@ -432,7 +498,7 @@ full_optimization() {
     configure_system_limits
     fix_file_watchers
     clean_cursor_cache
-    diagnose_gpu_issues
+    detect_and_configure_gpu
     create_optimized_launcher
     create_monitor_script
     
@@ -477,20 +543,21 @@ main() {
         case $choice in
             1) quick_fix ;;
             2) full_optimization ;;
-            3) clean_cursor_cache ;;
-            4) create_optimized_launcher ;;
-            5) 
+            3) gpu_optimization ;;
+            4) clean_cursor_cache ;;
+            5) create_optimized_launcher ;;
+            6) 
                 check_system_resources
-                diagnose_gpu_issues
+                detect_and_configure_gpu
                 ;;
-            6) create_monitor_script ;;
-            7) emergency_reset ;;
-            8) 
+            7) create_monitor_script ;;
+            8) emergency_reset ;;
+            9) 
                 print_info "Goodbye!"
                 exit 0
                 ;;
             *)
-                print_error "Invalid option. Please choose 1-8."
+                print_error "Invalid option. Please choose 1-9."
                 ;;
         esac
         echo

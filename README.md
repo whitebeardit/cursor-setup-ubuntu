@@ -10,6 +10,8 @@ This script automates the configuration of Cursor IDE on Ubuntu, resolving commo
 ✅ **Dock support** - Can be pinned to taskbar  
 ✅ **Multi-shell support** - Works with bash, zsh, and fish  
 ✅ **Auto-detection** - Finds Cursor automatically  
+✅ **GPU acceleration** - Automatic GPU detection and optimization  
+✅ **Hardware acceleration** - NVIDIA, AMD, and Intel GPU support  
 
 ## 📋 Prerequisites
 
@@ -42,7 +44,9 @@ This script provides:
 - Quick fixes for common freeze causes
 - System optimization for better performance
 - Cache cleaning and memory management
-- GPU acceleration troubleshooting
+- **GPU acceleration troubleshooting and optimization**
+- **Automatic GPU detection (NVIDIA/AMD/Intel)**
+- **Hardware-accelerated video decoding**
 
 ## 📥 Quick installation
 
@@ -71,13 +75,19 @@ This script provides:
 ## ⚙️ What gets configured
 
 ### 1. Terminal function
-The script adds a shell function to your shell configuration file:
+The script adds a shell function to your shell configuration file with automatic GPU optimization:
 ```bash
-# Function to run Cursor in background with arguments support
+# Function to run Cursor in background with GPU optimization
 cursor() {
-    nohup ~/Applications/cursor.AppImage --no-sandbox "$@" > /dev/null 2>&1 &
+    nohup ~/Applications/cursor.AppImage --no-sandbox --enable-gpu --enable-gpu-rasterization "$@" > /dev/null 2>&1 &
 }
 ```
+
+**GPU Detection:**
+- 🔵 **NVIDIA**: Advanced acceleration with zero-copy and native GPU memory buffers
+- 🔴 **AMD**: GPU rasterization and zero-copy acceleration  
+- 🟡 **Intel**: Basic GPU acceleration
+- ⚠️ **No GPU**: Automatic fallback to CPU rendering
 
 ### 2. .desktop file
 Creates `~/.local/share/applications/cursor.desktop` with:
@@ -111,6 +121,40 @@ cursor /path/to/project
 - 📱 **Application menu**: Search for "Cursor"
 - 📌 **Dock**: Right-click → "Add to favorites"
 - 🖥️ **Desktop**: Drag from application menu
+
+## 🎮 GPU Acceleration
+
+The scripts automatically detect and configure GPU acceleration:
+
+### NVIDIA GPU
+```bash
+# Advanced acceleration enabled
+--enable-gpu --enable-gpu-rasterization --enable-zero-copy --enable-native-gpu-memory-buffers
+```
+
+### AMD GPU  
+```bash
+# GPU acceleration enabled
+--enable-gpu --enable-gpu-rasterization --enable-zero-copy
+```
+
+### Intel GPU
+```bash
+# Basic acceleration enabled
+--enable-gpu --enable-gpu-rasterization
+```
+
+### Monitor GPU Usage
+```bash
+# NVIDIA
+watch -n 1 nvidia-smi
+
+# AMD
+radeontop
+
+# Intel
+intel_gpu_top
+```
 
 ## 🔧 Known issues and solutions
 

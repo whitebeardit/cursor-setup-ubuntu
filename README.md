@@ -1,172 +1,172 @@
-# 🖱️ Configurador do Cursor IDE para Ubuntu
+# 🖱️ Cursor IDE Setup for Ubuntu
 
-Este script automatiza a configuração do Cursor IDE no Ubuntu, resolvendo problemas comuns de sandbox e adicionando integração completa com o sistema operacional.
+This script automates the configuration of Cursor IDE on Ubuntu, resolving common sandbox issues and adding complete system integration.
 
-## 🚀 O que o script faz
+## 🚀 What the script does
 
-✅ **Configura execução sem sandbox** - Resolve erros de inicialização  
-✅ **Execução em background** - Terminal não fica preso aos logs  
-✅ **Ícone no menu de aplicações** - Integração visual completa  
-✅ **Suporte para dock** - Pode ser fixado na barra de tarefas  
-✅ **Multi-shell** - Funciona com bash, zsh e fish  
-✅ **Detecção automática** - Encontra o Cursor automaticamente  
+✅ **Configures sandbox-free execution** - Resolves startup errors  
+✅ **Background execution** - Terminal doesn't get stuck with logs  
+✅ **Application menu icon** - Complete visual integration  
+✅ **Dock support** - Can be pinned to taskbar  
+✅ **Multi-shell support** - Works with bash, zsh, and fish  
+✅ **Auto-detection** - Finds Cursor automatically  
 
-## 📋 Pré-requisitos
+## 📋 Prerequisites
 
-- Ubuntu (ou distribuições baseadas em Ubuntu)
-- Cursor IDE baixado (formato .AppImage)
-- Usuário normal (não root)
+- Ubuntu (or Ubuntu-based distributions)
+- Cursor IDE downloaded (.AppImage format)
+- Regular user (not root)
 
-## 🛠️ Como usar
+## 🛠️ How to use
 
-### Opção 1: Detecção automática
+### Option 1: Auto-detection
 ```bash
 ./setup-cursor-ubuntu.sh
 ```
 
-### Opção 2: Especificar caminho
+### Option 2: Specify path
 ```bash
-./setup-cursor-ubuntu.sh /caminho/para/cursor.AppImage
+./setup-cursor-ubuntu.sh /path/to/cursor.AppImage
 ```
 
-## 📥 Instalação rápida
+## 📥 Quick installation
 
-1. **Baixar o Cursor:**
+1. **Download Cursor:**
    ```bash
-   # Visite https://cursor.sh ou baixe diretamente:
+   # Visit https://cursor.sh or download directly:
    curl -L -o ~/Applications/cursor.AppImage "https://downloader.cursor.sh/linux/appImage/x64"
    chmod +x ~/Applications/cursor.AppImage
    ```
 
-2. **Executar o configurador:**
+2. **Run the setup:**
    ```bash
    chmod +x setup-cursor-ubuntu.sh
    ./setup-cursor-ubuntu.sh
    ```
 
-## 🎯 Locais onde o script procura o Cursor
+## 🎯 Where the script looks for Cursor
 
-- `~/Applications/cursor.AppImage` (recomendado)
+- `~/Applications/cursor.AppImage` (recommended)
 - `~/Downloads/cursor.AppImage`
 - `~/Desktop/cursor.AppImage`
 - `~/.local/bin/cursor.AppImage`
 - `/opt/cursor.AppImage`
 - `/usr/local/bin/cursor.AppImage`
 
-## ⚙️ O que é configurado
+## ⚙️ What gets configured
 
-### 1. Alias de terminal
-O script adiciona um alias no seu arquivo de configuração do shell:
+### 1. Terminal alias
+The script adds an alias to your shell configuration file:
 ```bash
 alias cursor='nohup ~/Applications/cursor.AppImage --no-sandbox > /dev/null 2>&1 &'
 ```
 
-### 2. Arquivo .desktop
-Cria `~/.local/share/applications/cursor.desktop` com:
-- Ícone personalizado
-- Integração com tipos de arquivo
-- Ações contextuais
-- Categorias apropriadas
+### 2. .desktop file
+Creates `~/.local/share/applications/cursor.desktop` with:
+- Custom icon
+- File type integration
+- Context actions
+- Appropriate categories
 
-### 3. Ícone do sistema
-Extrai e instala o ícone oficial em `~/.local/share/icons/cursor.png`
+### 3. System icon
+Extracts and installs the official icon at `~/.local/share/icons/cursor.png`
 
-## 🐚 Shells suportados
+## 🐚 Supported shells
 
 - **Bash** (`~/.bashrc`)
 - **Zsh** (`~/.zshrc`) 
 - **Fish** (`~/.config/fish/config.fish`)
 
-## ✨ Após a instalação
+## ✨ After installation
 
 ### Terminal
 ```bash
-# Aplicar configurações imediatamente
-source ~/.zshrc    # ou ~/.bashrc para bash
+# Apply settings immediately
+source ~/.zshrc    # or ~/.bashrc for bash
 
-# Usar o Cursor
+# Use Cursor
 cursor
 cursor /path/to/project
 ```
 
-### Interface gráfica
-- 📱 **Menu de aplicações**: Procure por "Cursor"
-- 📌 **Dock**: Clique com botão direito → "Adicionar aos favoritos"
-- 🖥️ **Área de trabalho**: Arrastar do menu de aplicações
+### Graphical interface
+- 📱 **Application menu**: Search for "Cursor"
+- 📌 **Dock**: Right-click → "Add to favorites"
+- 🖥️ **Desktop**: Drag from application menu
 
-## 🔧 Problemas conhecidos e soluções
+## 🔧 Known issues and solutions
 
-### Erro de sandbox
+### Sandbox error
 ```
 The SUID sandbox helper binary was found, but is not configured correctly
 ```
-**Solução:** O script já configura `--no-sandbox` automaticamente.
+**Solution:** The script automatically configures `--no-sandbox`.
 
-### Cursor não aparece no menu
+### Cursor doesn't appear in menu
 ```bash
-# Atualizar cache manualmente
+# Update cache manually
 update-desktop-database ~/.local/share/applications/
 ```
 
-### Alias não funciona
+### Alias doesn't work
 ```bash
-# Verificar se foi adicionado
-grep cursor ~/.zshrc  # ou ~/.bashrc
+# Check if it was added
+grep cursor ~/.zshrc  # or ~/.bashrc
 
-# Aplicar configurações
+# Apply settings
 source ~/.zshrc
 ```
 
-## 🗑️ Desinstalação
+## 🗑️ Uninstallation
 
-Para reverter as configurações:
+To revert the configuration:
 
 ```bash
-# Remover alias
+# Remove alias
 sed -i '/alias cursor=/d' ~/.zshrc
 sed -i '/## CURSOR/d' ~/.zshrc
 
-# Remover arquivos do sistema
+# Remove system files
 rm ~/.local/share/applications/cursor.desktop
 rm ~/.local/share/icons/cursor.png
 
-# Atualizar cache
+# Update cache
 update-desktop-database ~/.local/share/applications/
 ```
 
-## 📊 Compatibilidade
+## 📊 Compatibility
 
 - ✅ Ubuntu 20.04+
 - ✅ Linux Mint
 - ✅ Elementary OS
 - ✅ Pop!_OS
-- ⚠️ Outras distribuições (pode funcionar)
+- ⚠️ Other distributions (may work)
 
-## 🤝 Contribuições
+## 🤝 Contributing
 
-O script é modular e pode ser facilmente extendido. Principais funções:
+The script is modular and can be easily extended. Main functions:
 
-- `find_cursor_appimage()` - Localiza o Cursor
-- `setup_shell_alias()` - Configura alias por shell
-- `extract_icon()` - Extrai ícone do AppImage
-- `create_desktop_file()` - Cria integração desktop
+- `find_cursor_appimage()` - Locates Cursor
+- `setup_shell_alias()` - Configures shell aliases
+- `extract_icon()` - Extracts icon from AppImage
+- `create_desktop_file()` - Creates desktop integration
 
-## 📝 Log de mudanças
+## 📝 Changelog
 
-- **v1.0**: Versão inicial com suporte bash/zsh/fish
-- Detecção automática de Cursor
-- Extração de ícone do AppImage
-- Configuração completa de .desktop
-- Testes de validação
+- **v1.0**: Initial version with bash/zsh/fish support
+- Automatic Cursor detection
+- AppImage icon extraction
+- Complete .desktop configuration
+- Validation tests
 
-## 📞 Suporte
+## 📞 Support
 
-Se encontrar problemas:
+If you encounter issues:
 
-1. Execute com debug: `bash -x setup-cursor-ubuntu.sh`
-2. Verifique os logs de saída coloridos
-3. Teste manualmente: `~/Applications/cursor.AppImage --no-sandbox --version`
+1. Run with debug: `bash -x setup-cursor-ubuntu.sh`
+2. Check the colored output logs
+3. Test manually: `~/Applications/cursor.AppImage --no-sandbox --version`
 
 ---
 
-**Feito com ❤️ para a comunidade Ubuntu + Cursor IDE**
+**Made with ❤️ for the Ubuntu + Cursor IDE community**

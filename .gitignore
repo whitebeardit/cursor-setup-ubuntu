@@ -1,0 +1,25 @@
+# Arquivos temporários
+*.tmp
+*.temp
+*~
+
+# Logs
+*.log
+
+# Diretórios temporários de teste
+test-*/
+temp-*/
+
+# Backups
+*.bak
+*.backup
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# AppImages para teste (não versionar)
+*.AppImage
+
+# Configurações locais do usuário
+cursor-config-local.*
